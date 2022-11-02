@@ -23,7 +23,7 @@ class GraphViewer:
         GP.GraphPainter.random(self.data)
 
         cam = Camera()
-        cam.myLookAt()
+        #cam.myLookAt()
 
         pygame.init()
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
@@ -43,6 +43,16 @@ class GraphViewer:
                     pygame.quit()
                     print('Quitting program...')
                     quit()
+
+            keypress = pygame.key.get_pressed()
+            if keypress[pygame.K_w]:
+                glTranslatef(0,0,0.1)
+            if keypress[pygame.K_s]:
+                glTranslatef(0,0,-0.1)
+            if keypress[pygame.K_d]:
+                glTranslatef(-0.1,0,0)
+            if keypress[pygame.K_a]:
+                glTranslatef(0.1,0,0)
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             self.render()
