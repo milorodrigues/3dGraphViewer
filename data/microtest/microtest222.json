@@ -63,11 +63,6 @@
         },
         {
             "weight": 5,
-            "source": 5,
-            "target": 3
-        },
-        {
-            "weight": 5,
             "source": 7,
             "target": 6
         }
