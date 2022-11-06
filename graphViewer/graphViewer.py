@@ -17,13 +17,15 @@ class GraphViewer:
         self.displayNear = 0.1
         self.displayFar = 50.0
         self.data = G.Graph(graph)
+
+        self.cam = {}
     
     def run(self):
         graphDrawer = GD.GraphDrawer()
         graphDrawer.barycentric(self.data)
         GP.GraphPainter.random(self.data)
 
-        cam = Camera()
+        #cam = Camera()
         #cam.myLookAt()
 
         pygame.init()
@@ -33,10 +35,16 @@ class GraphViewer:
         gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.1, 50.0)
         # field of view, aspect ratio, near clipping plane, far clipping plane
 
-        glTranslatef(0.0, 0.0, -10)
-        # starting point of the camera, sounds like
+        self.cam['origin'] = glm.vec3(0.0, 0.0, 0.0)
+        self.cam['position'] = glm.vec3(0.0, 0.0, -10.0)
+        self.cam['up'] = glm.vec3(0.0, 1.0, 0.0)
+        self.cam['look'] = self.cam['position'] * -1.0
 
-        glRotatef(0, 0, 0, 0)
+        gluLookAt(
+            self.cam['position'][0], self.cam['position'][1], self.cam['position'][2],
+            self.cam['look'][0], self.cam['look'][1], self.cam['look'][2],
+            self.cam['up'][0], self.cam['up'][1], self.cam['up'][2]
+        )
 
         while True:
             for event in pygame.event.get():
@@ -60,9 +68,12 @@ class GraphViewer:
                 glTranslatef(-0.1,0,0)
             if keypress[pygame.K_a]:
                 glTranslatef(0.1,0,0)
-            
 
-            origin = glm.vec3(0.0, 0.0, 0.0)
+            #self.cam['origin'] = glm.vec3(0.0, 0.0, 0.0)
+            #self.cam['position'] = glm.vec3(0.0, 0.0, -10.0)
+                        
+            #keypress = pygame.key.get_pressed()
+
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             self.render()
