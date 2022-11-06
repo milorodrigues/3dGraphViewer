@@ -3,6 +3,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+import glm
 
 from . import graph as G
 from . import graphDrawer as GD
@@ -44,6 +45,12 @@ class GraphViewer:
                     print('Quitting program...')
                     quit()
 
+                if event.type == pygame.MOUSEMOTION:
+                    curMousePos = pygame.mouse.get_pos()
+                    if pygame.mouse.get_pressed()[2]: #Right click
+                        print("dragging right click")
+
+            
             keypress = pygame.key.get_pressed()
             if keypress[pygame.K_w]:
                 glTranslatef(0,0,0.1)
@@ -53,6 +60,9 @@ class GraphViewer:
                 glTranslatef(-0.1,0,0)
             if keypress[pygame.K_a]:
                 glTranslatef(0.1,0,0)
+            
+
+            origin = glm.vec3(0.0, 0.0, 0.0)
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             self.render()
