@@ -25,9 +25,6 @@ class GraphViewer:
         graphDrawer.barycentric(self.data)
         GP.GraphPainter.random(self.data)
 
-        #cam = Camera()
-        #cam.myLookAt()
-
         pygame.init()
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
         glEnable(GL_DEPTH_TEST)
@@ -35,16 +32,7 @@ class GraphViewer:
         gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.1, 50.0)
         # field of view, aspect ratio, near clipping plane, far clipping plane
 
-        self.cam['origin'] = glm.vec3(0.0, 0.0, 0.0)
-        self.cam['position'] = glm.vec3(0.0, 0.0, -10.0)
-        self.cam['up'] = glm.vec3(0.0, 1.0, 0.0)
-        self.cam['look'] = self.cam['position'] * -1.0
-
-        gluLookAt(
-            self.cam['position'][0], self.cam['position'][1], self.cam['position'][2],
-            self.cam['look'][0], self.cam['look'][1], self.cam['look'][2],
-            self.cam['up'][0], self.cam['up'][1], self.cam['up'][2]
-        )
+        cam = Camera()
 
         while True:
             for event in pygame.event.get():

@@ -6,21 +6,19 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-#eye -> pos
-#center -> target
-#up -> up
+
 class Camera:
     def __init__(self):
         self.pos = glm.vec3(0.0, 0.0, -10)
         self.target = glm.vec3(0.0, 0.0, 0.0)
-        self.direction = glm.normalize(self.target - self.pos)
+        self.look = glm.normalize(self.target - self.pos)
+        self.origin = glm.vec3(0.0, 0.0, 0.0)
+        
+        self.up = glm.vec3(0.0, 1.0, 0.0) #Constant
 
-        #These are constant
-        self.right = glm.vec3(0.0, 1.0, 0.0)
-        #self.right = glm.vec3(1.0, 2.0, 3.0)
-        self.up = glm.normalize(glm.cross(self.direction, self.right))
+        gluLookAt(*(self.pos), *(self.look), *(self.up))
 
-    def lookAt(self, target):
+    """def lookAt(self, target):
         self.target = target
         self.direction = glm.normalize(self.target - self.pos)
 
@@ -38,4 +36,4 @@ class Camera:
         view[3][1] = glm.dot(self.up, self.pos)
         view[3][2] = glm.dot(self.direction, self.pos)
 
-        return(view)
+        return(view)"""
