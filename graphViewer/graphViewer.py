@@ -29,7 +29,7 @@ class GraphViewer:
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
         glEnable(GL_DEPTH_TEST)
 
-        gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.1, 50.0)
+        gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.0001, 5000.0)
         # field of view, aspect ratio, near clipping plane, far clipping plane
 
         cam = Camera()
@@ -46,27 +46,19 @@ class GraphViewer:
                     if pygame.mouse.get_pressed()[2]: #Right click
                         print("dragging right click")
 
-            
-            keypress = pygame.key.get_pressed()
-            if keypress[pygame.K_w]:
-                glTranslatef(0,0,0.1)
-            if keypress[pygame.K_s]:
-                glTranslatef(0,0,-0.1)
-            if keypress[pygame.K_d]:
-                glTranslatef(-0.1,0,0)
-            if keypress[pygame.K_a]:
-                glTranslatef(0.1,0,0)
-
-            #self.cam['origin'] = glm.vec3(0.0, 0.0, 0.0)
-            #self.cam['position'] = glm.vec3(0.0, 0.0, -10.0)
-                        
-            #keypress = pygame.key.get_pressed()
-
+                elif event.type == pygame.MOUSEWHEEL:
+                    if (event.y > 0):
+                        cam.moveForward()
+                        cam.update()
+                    elif (event.y < 0):
+                        cam.moveBack()
+                        cam.update()
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             self.render()
+
             pygame.display.flip()
-            pygame.time.wait(10)
+            pygame.time.wait(30)
 
     def render(self):
         for node in self.data.graph.nodes:
