@@ -29,7 +29,17 @@ class Camera:
         self.updateLook()
         self.updateRadius()
 
+    def dragTarget(self, verticalDir, horizontalDir):
+        right = glm.normalize(glm.cross(self.look, self.up)) * -1.0
+        delta = ((self.up * verticalDir) + (right * horizontalDir)) * self.speed
+
+        self.target = self.target + delta
+        self.pos = self.pos + delta
+        self.updateLook()
+        self.updateRadius()
+
     def activate(self):
+        glLoadIdentity()
         gluLookAt(*(self.pos), *(self.look), *(self.up))
 
     #Update functions
@@ -38,7 +48,7 @@ class Camera:
         self.look = self.target - self.pos
     
     def updateRadius(self):
-        self.magnitude(self.look)
+        self.magnitude(self.pos - self.target)
 
     #Utilities
 

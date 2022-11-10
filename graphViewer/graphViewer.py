@@ -40,12 +40,24 @@ class GraphViewer:
 
                 if event.type == pygame.MOUSEMOTION:
                     curMousePos = pygame.mouse.get_pos()
+                    if pygame.mouse.get_pressed()[1]: #Wheel click
+                        print("dragging wheel click")
                     if pygame.mouse.get_pressed()[2]: #Right click
                         print("dragging right click")
 
-                elif event.type == pygame.MOUSEWHEEL:
+                if event.type == pygame.MOUSEWHEEL:
                     if (event.y != 0):
                         cam.zoom(event.y)
+
+            keypress = pygame.key.get_pressed()
+            if keypress[pygame.K_w]:
+                cam.dragTarget(1.0, 0.0)
+            if keypress[pygame.K_s]:
+                cam.dragTarget(-1.0, 0.0)
+            if keypress[pygame.K_d]:
+                cam.dragTarget(0.0, -1.0)
+            if keypress[pygame.K_a]:
+                cam.dragTarget(0.0, 1.0)
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -56,7 +68,6 @@ class GraphViewer:
 
             glMatrixMode(GL_MODELVIEW)
 
-            glLoadIdentity()
             cam.activate()
 
             self.drawGraph()
