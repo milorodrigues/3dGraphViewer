@@ -29,9 +29,6 @@ class GraphViewer:
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
         glEnable(GL_DEPTH_TEST)
 
-        gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.0001, 5000.0)
-        # field of view, aspect ratio, near clipping plane, far clipping plane
-
         cam = Camera()
 
         while True:
@@ -47,20 +44,27 @@ class GraphViewer:
                         print("dragging right click")
 
                 elif event.type == pygame.MOUSEWHEEL:
-                    if (event.y > 0):
-                        cam.moveForward()
-                        cam.update()
-                    elif (event.y < 0):
-                        cam.moveBack()
-                        cam.update()
+                    if (event.y != 0):
+                        cam.zoom(event.y)
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            self.render()
 
+            glMatrixMode(GL_PROJECTION)
+            glLoadIdentity()
+            gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.0001, 5000.0)
+            # field of view, aspect ratio, near clipping plane, far clipping plane
+
+            glMatrixMode(GL_MODELVIEW)
+
+            glLoadIdentity()
+            cam.activate()
+
+            self.drawGraph()
+            
             pygame.display.flip()
             pygame.time.wait(30)
 
-    def render(self):
+    def drawGraph(self):
         for node in self.data.graph.nodes:
             self.drawNode(self.data.graph.nodes[node])
         
@@ -80,9 +84,10 @@ class GraphViewer:
         outPos = self.data.graph.nodes[edge[0]]['GV_position']
         inPos = self.data.graph.nodes[edge[1]]['GV_position']
         
+        glPushMatrix()
         glBegin(GL_LINES)
         glVertex3f(*outPos)
         glVertex3f(*inPos)
         glEnd()
         glFlush()
-        return
+        glPopMatrix()
