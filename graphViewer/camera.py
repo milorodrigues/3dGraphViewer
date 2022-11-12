@@ -7,7 +7,6 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-
 class Camera:
     def __init__(self):
         self.pos = glm.vec3(0.0, 0.0, -10)
@@ -24,12 +23,17 @@ class Camera:
         #self.phi = 90
 
     def zoom(self, zoomDir):
+        #Known issue: you can zoom in past the object, so zooming out afterwards will make it appear to flip bc you've turned around
+        #Can implement a check to only apply the zoom if it won't make direction change
         direction = glm.normalize(self.look)
         self.pos = self.pos + (direction * self.speed * zoomDir)
         self.updateLook()
         self.updateRadius()
 
-    def dragTarget(self, verticalDir, horizontalDir):
+    def dragTarget(self, mouseDelta):
+        horizontalDir = mouseDelta[0]
+        verticalDir = mouseDelta[1]
+
         right = glm.normalize(glm.cross(self.look, self.up)) * -1.0
         delta = ((self.up * verticalDir) + (right * horizontalDir)) * self.speed
 

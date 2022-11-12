@@ -2,6 +2,6 @@ Install the stuff in requirements.txt and run main.py with Python 3. Program tak
 
 To enter new data, go to main.py and change the filepath variable.
 
-Current controls (subject to change):
--> Mouse wheel: zoom
--> WASD: move camera
+Current controls (subject to change):  
+-> Mouse wheel: zoom  
+-> Right click and drag: move camera (flying)  
