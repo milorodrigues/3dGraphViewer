@@ -17,20 +17,25 @@ class Camera:
         self.origin = glm.vec3(0.0, 0.0, 0.0)
         self.up = glm.vec3(0.0, 1.0, 0.0)
         self.speed = 0.1
+        self.angSpeed = 1
 
         self.radius = self.magnitude(self.look)
-        #self.theta = 0
-        #self.phi = 90
+        self.theta = 0 # affected by vertical drag
+        self.phi = 270 # affected by horizontal drag
+
+    def activate(self):
+        glLoadIdentity()
+        gluLookAt(*(self.pos), *(self.look), *(self.up))
 
     def zoom(self, zoomDir):
         #Known issue: you can zoom in past the object, so zooming out afterwards will make it appear to flip bc you've turned around
-        #Can implement a check to only apply the zoom if it won't make direction change
+        #Can maybe implement a check to only apply the zoom if it won't make direction change
         direction = glm.normalize(self.look)
         self.pos = self.pos + (direction * self.speed * zoomDir)
         self.updateLook()
         self.updateRadius()
 
-    def dragTarget(self, mouseDelta):
+    def dragFly(self, mouseDelta):
         horizontalDir = mouseDelta[0]
         verticalDir = mouseDelta[1]
 
@@ -42,9 +47,18 @@ class Camera:
         self.updateLook()
         self.updateRadius()
 
-    def activate(self):
-        glLoadIdentity()
-        gluLookAt(*(self.pos), *(self.look), *(self.up))
+    def dragOrbital(self, mouseDelta):
+        #Known issue: object flips horizontally at phi = 0 and phi = 180. pending to find out why.
+        print(f"in dragOrbital({mouseDelta})")
+
+        self.phi = ((self.phi - mouseDelta[1]) + 360) % 360
+        self.theta = (self.theta - mouseDelta[0]) % 360
+
+        print(f"phi = {self.phi} theta = {self.theta}")
+
+        self.pos = self.target + self.orbitalPos()
+
+        self.updateLook()
 
     #Update functions
 
@@ -59,29 +73,9 @@ class Camera:
     def magnitude(self, vec):
         return math.sqrt(vec.x ** 2 + vec.y ** 2 + vec.z ** 2)
 
-    """def orbitalPos(self):
+    def orbitalPos(self):
         return glm.vec3(
             self.radius * math.sin(math.radians(self.phi)) * math.sin(math.radians(self.theta)), 
             self.radius * math.cos(math.radians(self.phi)),
             self.radius * math.sin(math.radians(self.phi)) * math.cos(math.radians(self.theta))           
         )
-    
-    def lookAt(self, target):
-        self.target = target
-        self.direction = glm.normalize(self.target - self.pos)
-
-        view = np.ndarray((4,4))
-        view[0][0] = self.right.x
-        view[1][0] = self.right.y
-        view[2][0] = self.right.z
-        view[0][1] = self.up.x
-        view[1][1] = self.up.y
-        view[2][1] = self.up.z
-        view[0][2] = -self.direction.x
-        view[1][2] = -self.direction.y
-        view[2][2] = -self.direction.z
-        view[3][0] = glm.dot(self.right, self.pos)
-        view[3][1] = glm.dot(self.up, self.pos)
-        view[3][2] = glm.dot(self.direction, self.pos)
-
-        return(view)"""
