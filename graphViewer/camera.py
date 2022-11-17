@@ -1,6 +1,7 @@
 import pygame
 import glm
 import numpy as np
+import quaternion
 import math
 from pygame.locals import *
 from OpenGL.GL import *
@@ -13,10 +14,15 @@ class Camera:
         self.target = glm.vec3(0.0, 0.0, 0.0)
         self.look = self.target - self.pos
 
+        self.front = glm.normalize(self.look)
+        self.up = glm.vec3(0.0, 1.0, 0.0)
+        self.right = glm.vec3(1.0, 0.0, 0.0)
+
+        self.globalUp = glm.vec3(0.0, 1.0, 0.0)
+
         #Constants
         self.origin = glm.vec3(0.0, 0.0, 0.0)
-        self.up = glm.vec3(0.0, 1.0, 0.0) # Gets inverted by orbital movement but otherwise constant
-        self.speed = 0.1
+        self.speed = 0.05
         self.angSpeed = 1
 
         self.radius = self.magnitude(self.look)
@@ -36,46 +42,45 @@ class Camera:
         self.updateRadius()
 
     def dragFly(self, mouseDelta):
-        print("dragFly")
-        print(f"pos = {self.pos} target = {self.target} look = {self.look}")
         horizontalDir = mouseDelta[0]
         verticalDir = mouseDelta[1]
-
-        #horizontalDir = mouseDelta[0]/abs(mouseDelta[0]) if mouseDelta[0] != 0 else 0.0
-        #verticalDir = 0.0
-
-        right = glm.normalize(glm.cross(self.look, self.up)) * -1.0
-        delta = ((self.up * verticalDir) + (right * horizontalDir)) * self.speed
+        
+        delta = ((self.up * verticalDir) + (self.right * horizontalDir)) * self.speed
 
         self.target = self.target + delta
         self.pos = self.pos + delta
-        self.updateLook()
-        self.updateRadius()
 
-        print(f"pos = {self.pos} target = {self.target} look = {self.look}")
+        self.updateLook()
 
     def dragOrbital(self, mouseDelta):
-        oldPhi = self.phi
         self.phi = ((self.phi - mouseDelta[1]) + 360) % 360
         self.theta = (self.theta - mouseDelta[0]) % 360
 
-        if (oldPhi <= 180 and self.phi > 180) or (oldPhi > 180 and self.phi <= 180):
-            self.invertUp()
-
         self.pos = self.target + self.orbitalPos()
+
+        oldFront = glm.vec3(*(self.front))
+        self.front = glm.normalize(self.target - self.pos)
+
+        w = math.sqrt((self.magnitude(oldFront) ** 2) * (self.magnitude(self.front) ** 2)) + glm.dot(oldFront, self.front)
+        q = np.quaternion(w, *glm.cross(oldFront, self.front))
+
+        qR = np.quaternion(0, *self.right)
+        qR = np.quaternion.normalized(q * qR * q.conjugate())
+        self.right = glm.normalize(glm.vec3(qR.x, qR.y, qR.z))
+
+        qU = np.quaternion(0, *self.up)
+        qU = np.quaternion.normalized(q * qU * q.conjugate())
+        self.up = glm.normalize(glm.vec3(qU.x, qU.y, qU.z))
 
         self.updateLook()
 
     #Update functions
 
     def updateLook(self):
-        self.look = self.target - self.pos
+        self.look = self.pos + self.front
     
     def updateRadius(self):
         self.magnitude(self.pos - self.target)
-
-    def invertUp(self):
-        self.up = self.up * -1.0
 
     #Utilities
 

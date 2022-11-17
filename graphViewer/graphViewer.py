@@ -29,7 +29,9 @@ class GraphViewer:
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
         glEnable(GL_DEPTH_TEST)
 
-        cam = Camera()
+        self.cam = Camera()
+
+        #print(f"{self.cam.look}\n{self.cam.front}")
 
         self.verbose = False
         
@@ -48,7 +50,7 @@ class GraphViewer:
                         oldMousePos = (curMousePos[0], curMousePos[1])
                         curMousePos = pygame.mouse.get_pos()
                         delta = tuple(map(lambda i, j: i - j, curMousePos, oldMousePos))
-                        cam.dragOrbital(delta)
+                        self.cam.dragOrbital(delta)
                     if not pygame.mouse.get_pressed()[1]: #Let go of wheel click
                         pygame.event.set_grab(False)
 
@@ -58,14 +60,14 @@ class GraphViewer:
                         oldMousePos = (curMousePos[0], curMousePos[1])
                         curMousePos = pygame.mouse.get_pos()
                         delta = tuple(map(lambda i, j: i - j, curMousePos, oldMousePos))
-                        cam.dragFly(delta)
+                        self.cam.dragFly(delta)
                     if not pygame.mouse.get_pressed()[2]: #Let go of right click
                         self.verbose = False
                         pygame.event.set_grab(False)
 
                 if event.type == pygame.MOUSEWHEEL:
                     if (event.y != 0):
-                        cam.zoom(event.y)
+                        self.cam.zoom(event.y)
 
             
             """keypress = pygame.key.get_pressed()
@@ -88,7 +90,7 @@ class GraphViewer:
 
             glMatrixMode(GL_MODELVIEW)
 
-            cam.activate()
+            self.cam.activate()
 
             self.drawGraph()
             
@@ -101,6 +103,13 @@ class GraphViewer:
         
         for edge in self.data.graph.edges:
             self.drawEdge(edge)
+
+        glPushMatrix()
+        glTranslate(*(self.cam.target))
+        q = gluNewQuadric()
+        glColor3f(1.0, 1.0, 1.0)
+        gluSphere(q, 0.15, 20, 20)
+        glPopMatrix()
 
     def drawNode(self, node):
         glPushMatrix()
