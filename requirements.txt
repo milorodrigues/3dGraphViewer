@@ -3,3 +3,4 @@ networkx==2.8.8
 numpy==1.23.4
 pygame==2.1.2
 PyOpenGL==3.1.6
+quaternion==3.5.2.post4
