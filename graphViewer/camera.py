@@ -12,20 +12,18 @@ class Camera:
     def __init__(self):
         self.pos = glm.vec3(0.0, 0.0, -10)
         self.target = glm.vec3(0.0, 0.0, 0.0)
-        self.look = self.target - self.pos
 
-        self.front = glm.normalize(self.look)
+        self.front = glm.normalize(self.target - self.pos)
+        self.updateLook()
+
         self.up = glm.vec3(0.0, 1.0, 0.0)
         self.right = glm.vec3(1.0, 0.0, 0.0)
-
-        self.globalUp = glm.vec3(0.0, 1.0, 0.0)
 
         #Constants
         self.origin = glm.vec3(0.0, 0.0, 0.0)
         self.speed = 0.05
-        self.angSpeed = 1
 
-        self.radius = self.magnitude(self.look)
+        self.updateRadius()
         self.theta = 0 # affected by vertical drag
         self.phi = 270 # affected by horizontal drag
 
@@ -33,11 +31,11 @@ class Camera:
         glLoadIdentity()
         gluLookAt(*(self.pos), *(self.look), *(self.up))
 
-    def zoom(self, zoomDir):
+    def moveForwardBack(self, zoomDir):
         #Known issue: you can zoom in past the object, so zooming out afterwards will make it appear to flip bc you've turned around
         #Can maybe implement a check to only apply the zoom if it won't make direction change
-        direction = glm.normalize(self.look)
-        self.pos = self.pos + (direction * self.speed * zoomDir)
+
+        self.pos = self.pos + (self.front * self.speed * zoomDir)
         self.updateLook()
         self.updateRadius()
 
@@ -80,7 +78,7 @@ class Camera:
         self.look = self.pos + self.front
     
     def updateRadius(self):
-        self.magnitude(self.pos - self.target)
+        self.radius = self.magnitude(self.pos - self.target)
 
     #Utilities
 

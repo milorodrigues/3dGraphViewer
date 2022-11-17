@@ -3,10 +3,6 @@ Install the stuff in requirements.txt and run main.py with Python 3. Program tak
 To enter new data, go to main.py and change the filepath variable.
 
 Current controls (subject to change):  
--> Mouse wheel: zoom  
+-> Mouse wheel: move camera forward/backward  
 -> Right click and drag: move camera (flying)  
--> Mouse wheel click and drag: move camera (orbital)  
-
-Known issues to be fixed:  
--> You can zoom through the object, in which case zooming out will make it appear to flip (it was the camera that flipped)  
--> Zoom is currently broken because I rewrote the fly and orbital movements and haven't extended the changes to the zoom method yet
+-> Mouse wheel click and drag: move camera (orbital) 
