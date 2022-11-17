@@ -30,6 +30,8 @@ class GraphViewer:
         glEnable(GL_DEPTH_TEST)
 
         cam = Camera()
+
+        self.verbose = False
         
         while True:
             curMousePos = pygame.mouse.get_pos()
@@ -51,12 +53,14 @@ class GraphViewer:
                         pygame.event.set_grab(False)
 
                     if pygame.mouse.get_pressed()[2]: #Right click
+                        #self.verbose = True
                         pygame.event.set_grab(True)
                         oldMousePos = (curMousePos[0], curMousePos[1])
                         curMousePos = pygame.mouse.get_pos()
                         delta = tuple(map(lambda i, j: i - j, curMousePos, oldMousePos))
                         cam.dragFly(delta)
                     if not pygame.mouse.get_pressed()[2]: #Let go of right click
+                        self.verbose = False
                         pygame.event.set_grab(False)
 
                 if event.type == pygame.MOUSEWHEEL:
@@ -79,8 +83,8 @@ class GraphViewer:
 
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
-            gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.0001, 5000.0)
-            # field of view, aspect ratio, near clipping plane, far clipping plane
+            gluPerspective(45, (self.displaySize[0] / self.displaySize[1]), 0.0001, 5000.0) # field of view, aspect ratio, near clipping plane, far clipping plane
+            #glOrtho(0, self.displaySize[0], self.displaySize[1], 0, -1, 5000.0) # left, right, bottom, top, near, far
 
             glMatrixMode(GL_MODELVIEW)
 
@@ -101,6 +105,10 @@ class GraphViewer:
     def drawNode(self, node):
         glPushMatrix()
         glTranslatef(*(node['GV_position']))
+
+        if(self.verbose):
+            a = (GLfloat * 16)()
+            print(list(glGetFloatv(GL_MODELVIEW_MATRIX, a)))
 
         q = gluNewQuadric()
         glColor3f(*(node['GV_color']))

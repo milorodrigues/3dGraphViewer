@@ -15,7 +15,7 @@ class Camera:
 
         #Constants
         self.origin = glm.vec3(0.0, 0.0, 0.0)
-        self.up = glm.vec3(0.0, 1.0, 0.0)
+        self.up = glm.vec3(0.0, 1.0, 0.0) # Gets inverted by orbital movement but otherwise constant
         self.speed = 0.1
         self.angSpeed = 1
 
@@ -36,8 +36,13 @@ class Camera:
         self.updateRadius()
 
     def dragFly(self, mouseDelta):
+        print("dragFly")
+        print(f"pos = {self.pos} target = {self.target} look = {self.look}")
         horizontalDir = mouseDelta[0]
         verticalDir = mouseDelta[1]
+
+        #horizontalDir = mouseDelta[0]/abs(mouseDelta[0]) if mouseDelta[0] != 0 else 0.0
+        #verticalDir = 0.0
 
         right = glm.normalize(glm.cross(self.look, self.up)) * -1.0
         delta = ((self.up * verticalDir) + (right * horizontalDir)) * self.speed
@@ -47,14 +52,15 @@ class Camera:
         self.updateLook()
         self.updateRadius()
 
-    def dragOrbital(self, mouseDelta):
-        #Known issue: object flips horizontally at phi = 0 and phi = 180. pending to find out why.
-        print(f"in dragOrbital({mouseDelta})")
+        print(f"pos = {self.pos} target = {self.target} look = {self.look}")
 
+    def dragOrbital(self, mouseDelta):
+        oldPhi = self.phi
         self.phi = ((self.phi - mouseDelta[1]) + 360) % 360
         self.theta = (self.theta - mouseDelta[0]) % 360
 
-        print(f"phi = {self.phi} theta = {self.theta}")
+        if (oldPhi <= 180 and self.phi > 180) or (oldPhi > 180 and self.phi <= 180):
+            self.invertUp()
 
         self.pos = self.target + self.orbitalPos()
 
@@ -67,6 +73,9 @@ class Camera:
     
     def updateRadius(self):
         self.magnitude(self.pos - self.target)
+
+    def invertUp(self):
+        self.up = self.up * -1.0
 
     #Utilities
 
