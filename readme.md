@@ -5,4 +5,4 @@ To enter new data, go to main.py and change the filepath variable.
 Current controls (subject to change):  
 -> Mouse wheel: move camera forward/backward  
 -> Right click and drag: move camera (flying)  
--> Mouse wheel click and drag: move camera (orbital) 
+-> Mouse wheel click and drag: move camera (orbital)

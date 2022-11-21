@@ -3,15 +3,24 @@ import math
 import sys
 from functools import reduce
 import networkx as nx
+import glm
+from abc import ABC, abstractmethod
 
 class GraphDrawer:
-    def __init__(self):
-        self.origin = (0,0)
+    def __init__(self, model):
+        self.origin = glm.vec3(0.0, 0.0, 0.0)
+        
+        match model.lower():
+            case "barycentric":
+                self.drawer = BarycentricDrawer(self.origin)
+            case _:
+                self.drawer = RandomDrawer(self.origin)
+    
+    def initialize(self, data):
+        self.drawer.initialize(data)
 
-    def barycentric(self, data, iterations=15):
-        #self.randomize(data, flat=2)
-        self.BarycentricDrawer = BarycentricDrawer(self.origin)
-        self.BarycentricDrawer.run(data, iterations)
+    def runLoop(self, data):
+        self.drawer.runLoop(data)
 
     def eades(data):
         areaRadius = 1.5 # maximum distance from origin
@@ -36,24 +45,33 @@ class GraphDrawer:
                 np.random.uniform(low = areaRadius*(-1), high = areaRadius) * factor[1],
                 np.random.uniform(low = areaRadius*(-1), high = areaRadius) * factor[2])
 
-class BarycentricDrawer():
+class DrawerInterface(ABC):
+    @abstractmethod
+    def initialize(self, data):
+        raise NotImplementedError
+
+    @abstractmethod
+    def runLoop(self, data):
+        raise NotImplementedError
+
+class BarycentricDrawer(DrawerInterface):
     def __init__(self, origin):
         self.areaRadius = 3 # Maximum distance from origin
         self.origin = origin
 
-    def run(self, data, iterations=15):
+    def initialize(self, data):
         if 'GV_BarycentricFixedVertices' in data.graph.graph:
-            fixedVertices = data.graph.graph['GV_BarycentricFixedVertices']
+            self.fixedVertices = data.graph.graph['GV_BarycentricFixedVertices']
         else:
             cycles = self.cycleFinder(data)
-            fixedVertices = cycles[np.argmax(np.array([len(c) for c in cycles]))]
+            self.fixedVertices = cycles[np.argmax(np.array([len(c) for c in cycles]))]
 
-        freeVertices = [x for x in list(data.graph.nodes) if x not in fixedVertices]
-        self.positionFixedVertices(fixedVertices, data)
-
-        for i in range(iterations):
-            for node in freeVertices:
-                self.positionNode(data, node)
+        self.freeVertices = [x for x in list(data.graph.nodes) if x not in self.fixedVertices]
+        self.positionFixedVertices(self.fixedVertices, data)
+    
+    def runLoop(self, data):
+        for node in self.freeVertices:
+            self.positionNode(data, node)
     
     def cycleFinder(self, data):
         aux = [(0, -1)] * len(list(data.graph.nodes)) # (color, parent) tuples
@@ -105,7 +123,20 @@ class BarycentricDrawer():
         newPos = [c/data.graph.degree[node] for c in sumNeighbors]
         data.graph.nodes[node]['GV_position'] = (newPos[0], newPos[1], newPos[2])
 
-    #newline
+class RandomDrawer(DrawerInterface):
+    def __init__(self, origin):
+        self.areaRadius = 3 # Maximum distance from origin
+        self.origin = origin
+
+    def initialize(self, data):
+        for node in data.graph.nodes:
+            data.graph.nodes[node]['GV_position'] = (
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius))
+
+    def runLoop(self, data):
+        return
 
 class Util():
     def __init__(self):

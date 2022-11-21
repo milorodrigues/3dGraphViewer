@@ -5,8 +5,8 @@ import json
 import graphViewer.graphViewer as GV
 
 #filepath = 'data/microtest/microtest.json'
-#filepath = 'data/moreno_lesmis/moreno_lesmis.json'
-filepath = 'data/3-connected/3-connected.json'
+filepath = 'data/moreno_lesmis/moreno_lesmis.json'
+#filepath = 'data/3-connected/3-connected.json'
 #filepath = 'data/triangle/triangle.json'
 #filepath = 'data/single_node/single_node.json'
 with open(filepath) as f:

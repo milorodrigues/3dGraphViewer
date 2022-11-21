@@ -10,6 +10,13 @@ from . import graphDrawer as GD
 from . import graphPainter as GP
 from .camera import Camera
 
+class Parameters:
+    def __init__(self):
+        self.model = "barycentric"
+        self.iterations = 30
+        self.iterationsLeft = self.iterations
+        self.renderCameraTarget = True
+
 class GraphViewer:
     def __init__(self, graph):
         self.displaySize = (800, 600)
@@ -18,11 +25,12 @@ class GraphViewer:
         self.displayFar = 50.0
         self.data = G.Graph(graph)
 
-        self.cam = {}
+        self.parameters = Parameters()
     
     def run(self):
-        graphDrawer = GD.GraphDrawer()
-        graphDrawer.barycentric(self.data)
+        self.graphDrawer = GD.GraphDrawer(model=self.parameters.model)
+        self.graphDrawer.initialize(self.data)
+
         GP.GraphPainter.random(self.data)
 
         pygame.init()
@@ -88,6 +96,10 @@ class GraphViewer:
 
             self.drawGraph()
             
+            if self.parameters.iterationsLeft > 0:
+                self.graphDrawer.runLoop(self.data)
+                self.parameters.iterationsLeft -= 1
+            
             pygame.display.flip()
             pygame.time.wait(30)
 
@@ -98,13 +110,13 @@ class GraphViewer:
         for edge in self.data.graph.edges:
             self.drawEdge(edge)
 
-        # Renders a white sphere to show where the camera is looking at
-        glPushMatrix()
-        glTranslate(*(self.cam.target))
-        q = gluNewQuadric()
-        glColor3f(1.0, 1.0, 1.0)
-        gluSphere(q, 0.15, 20, 20)
-        glPopMatrix()
+        if self.parameters.renderCameraTarget:
+            glPushMatrix()
+            glTranslate(*(self.cam.target))
+            q = gluNewQuadric()
+            glColor3f(1.0, 1.0, 1.0)
+            gluSphere(q, 0.15, 20, 20)
+            glPopMatrix()
 
     def drawNode(self, node):
         glPushMatrix()
