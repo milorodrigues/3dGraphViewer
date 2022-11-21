@@ -10,22 +10,15 @@ from . import graphDrawer as GD
 from . import graphPainter as GP
 from .camera import Camera
 
-class Parameters:
-    def __init__(self):
-        self.model = "eades"
-        self.iterations = 200
-        self.iterationsLeft = self.iterations
-        self.renderCameraTarget = True
-
 class GraphViewer:
-    def __init__(self, graph):
+    def __init__(self, graph, parameters):
         self.displaySize = (800, 600)
         self.displayFOV = 50.0
         self.displayNear = 0.1
         self.displayFar = 50.0
         self.data = G.Graph(graph)
 
-        self.parameters = Parameters()
+        self.parameters = parameters
     
     def run(self):
         self.graphDrawer = GD.GraphDrawer(model=self.parameters.model)
