@@ -22,6 +22,7 @@ class Camera:
         #Constants
         self.origin = glm.vec3(0.0, 0.0, 0.0)
         self.speed = 0.05
+        self.angSpeed = 0.5
 
         self.updateRadius()
         self.theta = 0 # affected by vertical drag
@@ -32,9 +33,6 @@ class Camera:
         gluLookAt(*(self.pos), *(self.look), *(self.up))
 
     def moveForwardBack(self, zoomDir):
-        #Known issue: you can zoom in past the object, so zooming out afterwards will make it appear to flip bc you've turned around
-        #Can maybe implement a check to only apply the zoom if it won't make direction change
-
         self.pos = self.pos + (self.front * self.speed * zoomDir)
         self.updateLook()
         self.updateRadius()
@@ -50,9 +48,18 @@ class Camera:
 
         self.updateLook()
 
+    def dragLook(self, mouseDelta):
+        x = mouseDelta[0]
+        y = mouseDelta[1] * -1
+        return
+
     def dragOrbital(self, mouseDelta):
-        self.phi = ((self.phi - mouseDelta[1]) + 360) % 360
-        self.theta = (self.theta - mouseDelta[0]) % 360
+        mouseDelta = (mouseDelta[0], mouseDelta[1] * -1)
+        delta = self.transformMouseDelta(*mouseDelta)
+        print(f"{mouseDelta} {delta}")
+
+        self.phi = ((self.phi + (delta[1] * self.angSpeed)) + 360) % 360
+        self.theta = (self.theta - (delta[0] * self.angSpeed) + 360) % 360
 
         self.pos = self.target + self.orbitalPos()
 
@@ -91,3 +98,36 @@ class Camera:
             self.radius * math.cos(math.radians(self.phi)),
             self.radius * math.sin(math.radians(self.phi)) * math.cos(math.radians(self.theta))           
         )
+
+    def transformMouseDelta(self, x, y):
+        v = glm.vec2(x, y)
+        right = glm.vec2(1.0, 0.0)
+        vMag = math.sqrt(x ** 2 + y ** 2)
+
+        # Find the angle the vec2 makes with the positive 2d x-axis (relative to screen space)
+        try:
+            currentAngle = math.degrees(math.acos(glm.dot(v, right) / vMag))
+            if y < 0:
+                currentAngle = 360 - currentAngle
+        except ZeroDivisionError:
+            #print(f"ZeroDivisionError {v}")
+            return v
+
+        # Find the angle the camera up makes with the global up, i.e. by how much the camera has turned
+        globalUp = glm.vec3(0.0, 1.0, 0.0)
+        globalRight = glm.vec3(-1.0, 0.0, 0.0)
+
+        angleUp = math.atan2(self.magnitude(glm.cross(self.up, globalUp)), glm.dot(self.up, globalUp))
+        angleRight = math.atan2(self.magnitude(glm.cross(self.right, globalRight)), glm.dot(self.right, globalRight))
+
+        # Apply angle to the vec2
+        if math.isclose(angleUp, angleRight):
+            newAngle = (currentAngle - angleUp + 360) % 360
+        else:
+            newAngle = (currentAngle + angleUp + 360) % 360
+
+        # Generate new vec2
+        a = vMag * math.cos(math.radians(newAngle))
+        b = vMag * math.sin(math.radians(newAngle))
+
+        return (a,b)
