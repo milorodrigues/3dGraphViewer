@@ -11,6 +11,8 @@ class GraphDrawer:
         self.origin = glm.vec3(0.0, 0.0, 0.0)
         
         match model.lower():
+            case "eades":
+                self.drawer = EadesDrawer(self.origin)
             case "barycentric":
                 self.drawer = BarycentricDrawer(self.origin)
             case _:
@@ -53,6 +55,52 @@ class DrawerInterface(ABC):
     @abstractmethod
     def runLoop(self, data):
         raise NotImplementedError
+
+class EadesDrawer(DrawerInterface):
+    def __init__(self, origin):
+        self.areaRadius = 1.0 # Maximum distance from origin
+        self.origin = origin
+        self.c = [None, 1, 1, 1, 0.1]
+
+    def initialize(self, data):
+        for node in data.graph.nodes:
+            data.graph.nodes[node]['GV_position'] = (
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius))
+
+    def runLoop(self, data):
+        for u in data.graph.nodes:
+            pos = glm.vec3(*data.graph.nodes[u]['GV_position'])
+            totalForce = glm.vec3(0.0, 0.0, 0.0)
+
+            for v in data.graph.nodes:
+                if v != u:
+                    totalForce = totalForce + (self.c[4] * self.calculateForceExerted(data, v, u))
+
+            newPos = pos + totalForce
+            data.graph.nodes[u]['GV_position'] = (newPos.x, newPos.y, newPos.z)
+
+    def calculateForceExerted(self, data, source, target):
+        sourcePos = glm.vec3(*data.graph.nodes[source]['GV_position'])
+        targetPos = glm.vec3(*data.graph.nodes[target]['GV_position'])
+
+        distance = self.euclidean(sourcePos, targetPos)
+
+        if data.graph.has_edge(source, target) or data.graph.has_edge(target, source):
+            direction = glm.normalize(sourcePos - targetPos)
+            strength = self.c[1] * math.log(distance/self.c[2])
+            force = direction * strength
+
+        else:
+            direction = glm.normalize(targetPos - sourcePos)
+            strength = self.c[3] / (distance ** 2)
+            force = direction * strength
+
+        return force
+
+    def euclidean(self, a, b):
+        return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
 
 class BarycentricDrawer(DrawerInterface):
     def __init__(self, origin):

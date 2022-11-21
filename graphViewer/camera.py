@@ -56,7 +56,7 @@ class Camera:
     def dragOrbital(self, mouseDelta):
         mouseDelta = (mouseDelta[0], mouseDelta[1] * -1)
         delta = self.transformMouseDelta(*mouseDelta)
-        print(f"{mouseDelta} {delta}")
+        #print(f"{mouseDelta} {delta}")
 
         self.phi = ((self.phi + (delta[1] * self.angSpeed)) + 360) % 360
         self.theta = (self.theta - (delta[0] * self.angSpeed) + 360) % 360

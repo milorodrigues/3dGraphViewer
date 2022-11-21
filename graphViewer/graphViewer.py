@@ -12,8 +12,8 @@ from .camera import Camera
 
 class Parameters:
     def __init__(self):
-        self.model = "barycentric"
-        self.iterations = 30
+        self.model = "eades"
+        self.iterations = 200
         self.iterationsLeft = self.iterations
         self.renderCameraTarget = True
 
