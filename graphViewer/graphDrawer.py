@@ -9,14 +9,14 @@ from abc import ABC, abstractmethod
 class GraphDrawer:
     def __init__(self, model):
         self.origin = glm.vec3(0.0, 0.0, 0.0)
-        
-        match model.lower():
-            case "eades":
-                self.drawer = EadesDrawer(self.origin)
-            case "barycentric":
-                self.drawer = BarycentricDrawer(self.origin)
-            case _:
-                self.drawer = RandomDrawer(self.origin)
+
+        model = model.lower()
+        if model == "eades":
+            self.drawer = EadesDrawer(self.origin)
+        elif model == "barycentric":
+            self.drawer = BarycentricDrawer(self.origin)
+        else:
+            self.drawer = RandomDrawer(self.origin)
     
     def initialize(self, data):
         self.drawer.initialize(data)

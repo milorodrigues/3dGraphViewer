@@ -1,7 +1,7 @@
 import pygame
 import glm
 import numpy as np
-import quaternion
+#import quaternion
 import math
 from pygame.locals import *
 from OpenGL.GL import *
@@ -67,14 +67,14 @@ class Camera:
         self.front = glm.normalize(self.target - self.pos)
 
         w = math.sqrt((self.magnitude(oldFront) ** 2) * (self.magnitude(self.front) ** 2)) + glm.dot(oldFront, self.front)
-        q = np.quaternion(w, *glm.cross(oldFront, self.front))
+        q = glm.quat(w, *glm.cross(oldFront, self.front))
 
-        qR = np.quaternion(0, *self.right)
-        qR = np.quaternion.normalized(q * qR * q.conjugate())
+        qR = glm.quat(0, *self.right)
+        qR = glm.normalize(q * qR * glm.conjugate(q))
         self.right = glm.normalize(glm.vec3(qR.x, qR.y, qR.z))
 
-        qU = np.quaternion(0, *self.up)
-        qU = np.quaternion.normalized(q * qU * q.conjugate())
+        qU = glm.quat(0, *self.up)
+        qU = glm.normalize(q * qU * glm.conjugate(q))
         self.up = glm.normalize(glm.vec3(qU.x, qU.y, qU.z))
 
         self.updateLook()
