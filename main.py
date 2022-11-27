@@ -17,7 +17,7 @@ class Parameters:
 argParser = argparse.ArgumentParser()
 argParser.add_argument("-f", "--filepath", help="Relative path to the json file containing the graph", required=True)
 argParser.add_argument("-i", "--iterations", help="Number of iterations (default 100)", default=100)
-argParser.add_argument("-m", "--model", help="Drawing model (default Eades)", default="eades")
+argParser.add_argument("-m", "--model", help="Drawing model (default spring)", default="spring")
 argParser.add_argument("-t", "--target", help="Render camera target on screen (y/n) (default n)", default='n')
 args = argParser.parse_args()
 

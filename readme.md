@@ -6,7 +6,7 @@ Install the stuff in requirements.txt and run main.py with Python 3. Program tak
 
 * filepath: relative path to the .json file containing the graph
 * iterations: number of iterations the drawing algorithm will perform (default 100)
-* model: drawing algorithm to use (currently: barycentric, eades, random) (default eades)
+* model: drawing algorithm to use (currently: barycentric, spring, random) (default spring)
 * target: whether to render an extra point in the screen showing the specific coordinate the camera is looking at (Y/N) (default N)
 
 ## Current controls (subject to change):  

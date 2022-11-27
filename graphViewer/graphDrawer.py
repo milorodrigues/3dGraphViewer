@@ -1,7 +1,5 @@
 import numpy as np
 import math
-import sys
-from functools import reduce
 import networkx as nx
 import glm
 from abc import ABC, abstractmethod
