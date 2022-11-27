@@ -16,8 +16,10 @@ class GraphDrawer:
         model = model.lower()
         if model == "multi-scale":
             self.drawer = MultiScaleDrawer(self.origin)
-        elif model == "eades":
-            self.drawer = EadesDrawer(self.origin)
+        elif model == "graph-distance":
+            self.drawer = GraphDistanceDrawer(self.origin)
+        elif model == "spring":
+            self.drawer = SpringDrawer(self.origin)
         elif model == "barycentric":
             self.drawer = BarycentricDrawer(self.origin)
         else:
@@ -139,7 +141,52 @@ class MultiScaleDrawer(DrawerInterface):
         else:
             return 1
 
-class EadesDrawer(DrawerInterface):
+class GraphDistanceDrawer(DrawerInterface):
+    def __init__(self, origin):
+        self.areaRadius = 1.0
+        self.origin = origin
+        self.rigidity = 1 # big K
+        self.threshold = 0.1 # epsilon
+    
+    def initialize(self, data):
+        print(f"Initializing GraphDistanceDrawer...")
+
+        print(f"Computing shortest paths...")
+        pathsList = []
+        paths = nx.all_pairs_dijkstra_path_length(data.graph, weight='weight')
+        for path in paths:
+            for target in path[1]:
+                pathsList.append([path[0], target, path[1][target]])
+
+        self.shortestPaths = pd.DataFrame(pathsList, columns=['n1', 'n2', 'distance'])
+        self.shortestPaths.drop(self.shortestPaths[self.shortestPaths['n1'] == self.shortestPaths['n2']].index, inplace=True)
+
+        print(f"Computing ideal distances and spring constants...")
+        goalLength = (self.areaRadius * 2) / self.shortestPaths['distance'].max() # big L
+        self.shortestPaths['length'] = self.shortestPaths['distance'] * goalLength
+        self.shortestPaths['rigidity'] = self.rigidity / (self.shortestPaths['distance'] ** 2)
+
+        print(f"Initializing deltas...")
+        self.deltas = {}
+        for n in self.shortestPaths['n1'].unique():
+            self.deltas[n] = 0
+
+        print(f"Initializing node positions...")
+        for node in data.graph.nodes:
+            data.graph.nodes[node]['GV_position'] = (
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius))
+
+        print(f"Moving to drawing...")
+        return
+
+    def runLoop(self, data):
+        for key in self.deltas:
+            print(key)
+        return
+
+class SpringDrawer(DrawerInterface):
     def __init__(self, origin):
         self.areaRadius = 1.0 # Maximum distance from origin
         self.origin = origin
@@ -181,9 +228,6 @@ class EadesDrawer(DrawerInterface):
             force = direction * strength
 
         return force
-
-    def calculateForceEdge(self, data, source, target):
-        return
 
     def euclidean(self, a, b):
         return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)

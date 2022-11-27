@@ -1,1 +1,1 @@
-python main.py -f "data/hemophilia/hemophilia.json" -i 10 -m multi-scale -t y
+python main.py -f "data/3-connected/3-connected.json" -i 1 -m graph-distance -t y

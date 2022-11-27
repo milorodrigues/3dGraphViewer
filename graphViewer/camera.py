@@ -10,7 +10,7 @@ from OpenGL.GLUT import *
 
 class Camera:
     def __init__(self):
-        self.pos = glm.vec3(0.0, 0.0, -300)
+        self.pos = glm.vec3(0.0, 0.0, -10)
         self.target = glm.vec3(0.0, 0.0, 0.0)
 
         self.front = glm.normalize(self.target - self.pos)
