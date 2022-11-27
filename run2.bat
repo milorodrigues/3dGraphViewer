@@ -1,0 +1,1 @@
+python main.py -f "data/hemophilia/hemophilia.json" -i 10 -m multi-scale -t y

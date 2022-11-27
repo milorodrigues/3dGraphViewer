@@ -5,13 +5,18 @@ from functools import reduce
 import networkx as nx
 import glm
 from abc import ABC, abstractmethod
+import pandas as pd
+import random
+import time
 
 class GraphDrawer:
     def __init__(self, model):
         self.origin = glm.vec3(0.0, 0.0, 0.0)
 
         model = model.lower()
-        if model == "eades":
+        if model == "multi-scale":
+            self.drawer = MultiScaleDrawer(self.origin)
+        elif model == "eades":
             self.drawer = EadesDrawer(self.origin)
         elif model == "barycentric":
             self.drawer = BarycentricDrawer(self.origin)
@@ -56,6 +61,84 @@ class DrawerInterface(ABC):
     def runLoop(self, data):
         raise NotImplementedError
 
+class MultiScaleDrawer(DrawerInterface):
+    def __init__(self, origin):
+        self.origin = origin
+        self.areaRadius = 100
+
+        self.threshold = 10
+        self.ratio = 3
+
+    def initialize(self, data):
+        print(f"Initializing MultiScaleDrawer...")
+
+        print(f"Computing shortest paths...")
+        pathsList = []
+        paths = nx.all_pairs_dijkstra_path_length(data.graph, weight='weight')
+        for path in paths:
+            for target in path[1]:
+                pathsList.append([path[0], target, path[1][target]])
+
+        self.shortestPaths = pd.DataFrame(pathsList, columns=['n1', 'n2', 'distance'])
+
+        print(f"Initializing node positions...")
+        for node in data.graph.nodes:
+            data.graph.nodes[node]['GV_position'] = (
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius),
+                np.random.uniform(low = self.areaRadius*(-1), high = self.areaRadius))
+
+        print(f"Moving to drawing...")
+
+        start = time.time()
+
+        k = self.threshold
+        while k <= data.graph.number_of_nodes():
+            print(f"k = {k} {time.time() - start}")
+            print(self.kCenters(data, k))
+            k *= self.ratio
+            print(f"{time.time() - start}")
+
+    def kCenters(self, data, k):
+        centers = set()
+        next = random.choice(list(data.graph.nodes))
+
+        centers.add(next)
+
+        df = self.shortestPaths[(self.shortestPaths['n1'].isin(centers)) ^ (self.shortestPaths['n2'].isin(centers))].loc[:,['n1', 'n2', 'distance']].copy()
+        df['n1'] = df.apply(lambda x: int(x['n2']) if x['n1'] in centers else int(x['n1']), axis=1)
+        df.drop(df[~df['n2'].isin(centers)].index, inplace=True)
+        df.set_index('n1', inplace=True)
+
+        for i in range(2, k+1):
+            centers.add(next)
+            df2 = self.shortestPaths[((self.shortestPaths['n1'] == next) & ~(self.shortestPaths['n2'].isin(centers))) ^ ((self.shortestPaths['n2'] == next) & ~(self.shortestPaths['n1'].isin(centers)))].loc[:,['n1', 'n2', 'distance']].copy()
+            df2['n1'] = df2.apply(lambda x: int(x['n2']) if x['n1'] == next else int(x['n1']), axis=1)
+            df2.drop(df2[df2['n2'] != next].index, inplace=True)
+            df2.rename(columns={'distance': 'distance2'}, inplace=True)
+            df2.set_index('n1', inplace=True)
+
+            df = pd.concat([df['distance'], df2['distance2']], axis=1)
+            df['distance'] = df.apply(lambda x: x['distance2'] if x['distance2'] < x['distance'] else x['distance'], axis=1)
+            df.drop(['distance2'], axis=1, inplace=True)
+            next = df[df['distance'] == df['distance'].max()].index.values.astype(int)[0]
+            df.drop(next, inplace=True)
+        
+        return centers
+
+    def localLayout(self, data, centers):
+        k = 4
+        return
+
+    def runLoop(self, data):
+        return
+
+    def getWeight(self, a, b, attr):
+        if 'weight' in attr:
+            return attr['weight']
+        else:
+            return 1
+
 class EadesDrawer(DrawerInterface):
     def __init__(self, origin):
         self.areaRadius = 1.0 # Maximum distance from origin
@@ -98,6 +181,9 @@ class EadesDrawer(DrawerInterface):
             force = direction * strength
 
         return force
+
+    def calculateForceEdge(self, data, source, target):
+        return
 
     def euclidean(self, a, b):
         return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)

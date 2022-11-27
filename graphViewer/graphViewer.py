@@ -12,7 +12,7 @@ from .camera import Camera
 
 class GraphViewer:
     def __init__(self, graph, parameters):
-        self.displaySize = (800, 600)
+        self.displaySize = (1500, 1000)
         self.displayFOV = 50.0
         self.displayNear = 0.1
         self.displayFar = 50.0
@@ -31,6 +31,11 @@ class GraphViewer:
         glEnable(GL_DEPTH_TEST)
 
         self.cam = Camera()
+
+        """while self.parameters.iterationsLeft > 0:
+            print(f"{self.parameters.iterationsLeft} iterations left")
+            self.graphDrawer.runLoop(self.data)
+            self.parameters.iterationsLeft -= 1"""
         
         while True:
             curMousePos = pygame.mouse.get_pos()
