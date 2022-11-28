@@ -13,7 +13,7 @@ class GraphDrawer:
 
         model = model.lower()
         if model == "multi-scale":
-            self.drawer = MultiScaleDrawer(self.origin)
+            self.drawer = GajerDrawer(self.origin)
         elif model == "graph-distance":
             self.drawer = GraphDistanceDrawer(self.origin)
         elif model == "spring":
@@ -60,6 +60,51 @@ class DrawerInterface(ABC):
     @abstractmethod
     def runLoop(self, data):
         raise NotImplementedError
+
+class GajerDrawer(DrawerInterface):
+    def __init__(self, origin):
+        self.origin = origin
+    
+    def initialize(self, data):
+        print(f"Computing shortest paths...")
+        paths = nx.all_pairs_dijkstra_path_length(data.graph, weight='weight')
+        distances = {}
+        for p in paths:
+            distances.setdefault(p[0], p[1])
+
+        e = nx.eccentricity(data.graph, sp=distances)
+        diameterWeighted = nx.diameter(data.graph, e)
+        diameterUnweighted = nx.diameter(data.graph)
+
+        print(f"Generating filtrations...")
+        factor = math.log(diameterWeighted, 2) / (diameterUnweighted / math.log(diameterUnweighted, 2))
+        exp = factor
+
+        aux = list(data.graph.nodes)
+        filtrations = []
+        filtrations.append(list(aux))
+
+        while 2**exp <= diameterWeighted:
+            aux = list(filtrations[-1])
+            filtrations.append([])
+
+            while len(aux) > 0:
+                next = random.choice(aux)
+                aux.remove(next)
+                filtrations[-1].append(next)
+
+                maxDistance = 2**exp
+                for v in aux:
+                    if distances[next][v] <= maxDistance:
+                        aux.remove(v)
+            
+            exp += factor
+        
+        print(f"Moving to drawing...")
+        return
+    
+    def runLoop(self, data):
+        return
 
 class MultiScaleDrawer(DrawerInterface):
     def __init__(self, origin):
