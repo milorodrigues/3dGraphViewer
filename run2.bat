@@ -1,1 +1,1 @@
-python main.py -f "data/3-connected/3-connected.json" -i 150 -m multi-scale -t y
+python main.py -f "data/hemophilia/hemophilia.json" -i 150 -m multi-scale -t y
