@@ -68,7 +68,7 @@ class GajerDrawer(DrawerInterface):
 
         # Parameters
         self.rounds = 15
-        self.areaScaling = 1
+        self.areaScaling = 3
         self.r = 0.15 # For heat calculation
         self.s = 3 # For heat calculation
 
@@ -110,19 +110,22 @@ class GajerDrawer(DrawerInterface):
             
             exp += factor
 
-            # Cutting the smallest graph down to 3 vertices for triangulation later
-            # If there was a graph smaller than 3, it's dropped but its vertices are kept when cutting down the next smallest one
-            keep = set()
-            while len(self.filtrations[-1]) < 3:
-                set.update(set(self.filtrations[-1]))
-                self.filtrations = self.filtrations[:-1]
-            if len(self.filtrations[-1]) > 3:
-                aux = set(self.filtrations[-1])
-                aux = list(aux - keep)
-                self.filtrations[-1] = list(keep) + random.sample(aux, 3 - len(keep))
+        print(f"{[len(f) for f in self.filtrations]}")
+
+        # Cutting the smallest graph down to 3 vertices for triangulation later
+        # If there was a graph smaller than 3, it's dropped but its vertices are kept when cutting down the next smallest one
+        keep = set()
+        while len(self.filtrations[-1]) < 3:
+            set.update(set(self.filtrations[-1]))
+            self.filtrations = self.filtrations[:-1]
+        if len(self.filtrations[-1]) > 3:
+            aux = set(self.filtrations[-1])
+            aux = list(aux - keep)
+            self.filtrations[-1] = list(keep) + random.sample(aux, 3 - len(keep))
 
         self.k = len(self.filtrations) - 1
         self.filtrations.append([])
+        print(f"{[len(f) for f in self.filtrations]}")
 
         print(f"Computing neighborhoods...")
 
@@ -166,10 +169,10 @@ class GajerDrawer(DrawerInterface):
     
     def runLoop(self, data):
         if self.roundsLeft == 0:
-            if self.iterationsLeft > 0:
+            if self.iterationsLeft >= 0:
                 self.runIteration(data)
-                #self.iterationsLeft -= 1
-                self.iterationsLeft = 0
+                self.iterationsLeft -= 1
+                #self.iterationsLeft = 0
                 self.roundsLeft = self.rounds
         else:
             print(f"rounds left: {self.roundsLeft}")
@@ -179,6 +182,7 @@ class GajerDrawer(DrawerInterface):
 
     def runIteration(self, data):
         print(f"starting iteration i = {self.iterationsLeft}")
+        print(f"{[len(f) for f in self.filtrations]}")
         f = list(set(self.filtrations[self.iterationsLeft]) - set(self.filtrations[self.iterationsLeft+1]))
 
         if self.iterationsLeft == self.k: # First iteration, place 3 deepest vertices in a triangle around the origin
@@ -202,9 +206,18 @@ class GajerDrawer(DrawerInterface):
                 self.placedVertices.setdefault(v, {})
 
         else:
+            print(f"len(f) = {len(f)}")
             for v in f:
                 # find initial position pos[v] of v
-                break
+                # Find closest 3 vertices among the ones already placed
+
+                d = [(u, self.distances[u][v]) for u in self.placedVertices]
+                d = sorted(d, key = lambda tup: tup[1])
+                d = d[:3]
+
+                newPos = (glm.vec3(*data.graph.nodes[d[0][0]]['GV_position']) + glm.vec3(*data.graph.nodes[d[1][0]]['GV_position']) + glm.vec3(*data.graph.nodes[d[2][0]]['GV_position'])) / 3
+                data.graph.nodes[v]['GV_position'] = (newPos.x, newPos.y, newPos.z)
+                self.placedVertices.setdefault(v, {})
         return
     
     def runRound(self, data):
@@ -232,7 +245,7 @@ class GajerDrawer(DrawerInterface):
 
             newPos = glm.vec3(*data.graph.nodes[v]['GV_position']) + delta
             data.graph.nodes[v]['GV_position'] = (newPos.x, newPos.y, newPos.z)
-            print(f"{v} {newPos}")
+            #print(f"{v} {newPos}")
         return
 
     def calculateLocalForce(self, data, v, i):
