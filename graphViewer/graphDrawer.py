@@ -67,7 +67,8 @@ class GajerDrawer(DrawerInterface):
         self.origin = origin
 
         # Parameters
-        self.rounds = 15
+        self.minRounds = 10
+        self.maxRounds = 200
         self.areaScaling = 3
         self.r = 0.15 # For heat calculation
         self.s = 3 # For heat calculation
@@ -85,16 +86,19 @@ class GajerDrawer(DrawerInterface):
         e = nx.eccentricity(data.graph, sp=self.distances)
         diameterWeighted = nx.diameter(data.graph, e)
         diameterUnweighted = nx.diameter(data.graph)
+        print(f"dW = {diameterWeighted} dU = {diameterUnweighted}")
 
         print(f"Generating filtrations...")
-        factor = math.log(diameterWeighted, 2) / (diameterUnweighted / math.log(diameterUnweighted, 2))
+        #factor = math.log(diameterWeighted, 2) / (diameterUnweighted / math.log(diameterUnweighted, 2))
+        factor = 1
         exp = factor
 
         aux = list(data.graph.nodes)
         self.filtrations = []
         self.filtrations.append(list(aux))
 
-        while 2**exp <= diameterWeighted:
+        #while 2**exp <= diameterWeighted:
+        while 2**exp <= diameterUnweighted:
             aux = list(self.filtrations[-1])
             self.filtrations.append([])
 
@@ -112,16 +116,16 @@ class GajerDrawer(DrawerInterface):
 
         print(f"{[len(f) for f in self.filtrations]}")
 
-        # Cutting the smallest graph down to 3 vertices for triangulation later
-        # If there was a graph smaller than 3, it's dropped but its vertices are kept when cutting down the next smallest one
+        # Cutting the smallest graph down to 4 vertices to define an R3 space for the first placement loop
+        # If there was a graph smaller than 4, it's dropped but its vertices are kept when cutting down the next smallest one
         keep = set()
-        while len(self.filtrations[-1]) < 3:
+        while len(self.filtrations[-1]) < 4:
             set.update(set(self.filtrations[-1]))
             self.filtrations = self.filtrations[:-1]
-        if len(self.filtrations[-1]) > 3:
+        if len(self.filtrations[-1]) > 4:
             aux = set(self.filtrations[-1])
             aux = list(aux - keep)
-            self.filtrations[-1] = list(keep) + random.sample(aux, 3 - len(keep))
+            self.filtrations[-1] = list(keep) + random.sample(aux, 4 - len(keep))
 
         self.k = len(self.filtrations) - 1
         self.filtrations.append([])
@@ -137,7 +141,7 @@ class GajerDrawer(DrawerInterface):
         for node, val in data.graph.degree(weight='weight'):
             degreeSum += val
 
-        for i in range(self.k, -1, -1):
+        """for i in range(self.k, -1, -1):
             size = self.nbrs(i, degreeSum)
             for v in self.filtrations[i]:
                 self.neighborhoods.setdefault(v, {})
@@ -160,7 +164,31 @@ class GajerDrawer(DrawerInterface):
 
                     for n in data.graph.neighbors(closest[1]):
                         if n not in self.neighborhoods[v][i]['members']:
-                            q.put((self.distances[v][n], n, data.graph[closest[1]][n]['weight']))
+                            q.put((self.distances[v][n], n, data.graph[closest[1]][n]['weight']))"""
+    
+        for i in range(self.k, -1, -1):
+            size = math.ceil(self.nbrs(i, degreeSum))
+            for v in self.filtrations[i]:
+                #print(f"v = {v}")
+                visited = set()
+                visited.add(v)
+
+                self.neighborhoods.setdefault(v, {})
+                self.neighborhoods[v].setdefault(i, {'size': 0, 'members': [v]})
+                di = [(node, self.distances[v][node]) for node in self.filtrations[i]]
+                di = sorted(di, key = lambda tup: tup[1])
+
+                begin = 0
+                while di[begin][0] == v:
+                    begin += 1
+                
+                end = begin + size + 1
+                if end >= len(di):
+                    end = len(di)
+                
+                self.neighborhoods[v][i]['members'] = [m[0] for m in di[begin:end]]
+
+                #print(f"size = {self.neighborhoods[v][i]['size']} len(Ni(v)) = {len(self.neighborhoods[v][i]['members'])}")
 
         print(f"Moving to drawing...")
         self.iterationsLeft = self.k
@@ -170,62 +198,165 @@ class GajerDrawer(DrawerInterface):
     def runLoop(self, data):
         if self.roundsLeft == 0:
             if self.iterationsLeft >= 0:
+                #if self.iterationsLeft == self.k - 2: return
                 self.runIteration(data)
+                self.roundsLeft = self.getRounds()
                 self.iterationsLeft -= 1
-                #self.iterationsLeft = 0
-                self.roundsLeft = self.rounds
+            elif self.iterationsLeft == -1:
+                print(f"Centering graph...")
+                self.centerGraph(data)
+                self.iterationsLeft -= 1
+                print(f"Drawing finished.")
         else:
             print(f"rounds left: {self.roundsLeft}")
             self.runRound(data)
             self.roundsLeft -= 1
         return
 
+    def getRounds(self):
+        base = (self.maxRounds/self.minRounds) ** (1/self.k)
+        return math.ceil(base ** (self.k - self.iterationsLeft)) * self.minRounds
+        #return math.ceil((((self.maxRounds - self.minRounds)/self.k) * (self.k - self.iterationsLeft + 1)) + self.minRounds)
+        #return 30
+
     def runIteration(self, data):
         print(f"starting iteration i = {self.iterationsLeft}")
         print(f"{[len(f) for f in self.filtrations]}")
         f = list(set(self.filtrations[self.iterationsLeft]) - set(self.filtrations[self.iterationsLeft+1]))
+        #print(f"f = {f}")
 
-        if self.iterationsLeft == self.k: # First iteration, place 3 deepest vertices in a triangle around the origin
-            data.graph.nodes[f[0]]['GV_position'] = (0.0, 0.0, 0.0)
-            data.graph.nodes[f[1]]['GV_position'] = (self.distances[f[0]][f[1]] * self.areaScaling, 0.0, 0.0)
+        if self.iterationsLeft == self.k: # First iteration, place 4 deepest vertices around the origin
+            rand = False
+            if (self.distances[f[0]][f[1]] + self.distances[f[0]][f[2]] > self.distances[f[1]][f[2]] and
+                self.distances[f[1]][f[2]] + self.distances[f[0]][f[2]] > self.distances[f[0]][f[1]] and
+                self.distances[f[0]][f[1]] + self.distances[f[1]][f[2]] > self.distances[f[0]][f[2]]):
+                a = f[0]
+                b = f[1]
+                c = f[2]
+                d = f[3]
+            elif (self.distances[f[0]][f[1]] + self.distances[f[0]][f[3]] > self.distances[f[1]][f[3]] and
+                self.distances[f[1]][f[3]] + self.distances[f[0]][f[3]] > self.distances[f[0]][f[1]] and
+                self.distances[f[0]][f[1]] + self.distances[f[1]][f[3]] > self.distances[f[0]][f[3]]):
+                a = f[0]
+                b = f[1]
+                d = f[2]
+                c = f[3]
+            elif (self.distances[f[0]][f[3]] + self.distances[f[0]][f[2]] > self.distances[f[3]][f[2]] and
+                self.distances[f[3]][f[2]] + self.distances[f[0]][f[2]] > self.distances[f[0]][f[3]] and
+                self.distances[f[0]][f[3]] + self.distances[f[3]][f[2]] > self.distances[f[0]][f[2]]):
+                a = f[0]
+                d = f[1]
+                b = f[2]
+                c = f[3]
+            elif (self.distances[f[1]][f[3]] + self.distances[f[1]][f[2]] > self.distances[f[3]][f[2]] and
+                self.distances[f[3]][f[2]] + self.distances[f[1]][f[2]] > self.distances[f[1]][f[3]] and
+                self.distances[f[1]][f[3]] + self.distances[f[3]][f[2]] > self.distances[f[1]][f[2]]):
+                d = f[0]
+                a = f[1]
+                b = f[2]
+                c = f[3]
+            else:
+                print(f"Couldn't draw triangle, initializing randomly...")
+                a = f[0]
+                b = f[1]
+                c = f[2]
+                d = f[3]
+                data.graph.nodes[a]['GV_position'] = (0.0, 0.0, 0.0)
+                data.graph.nodes[b]['GV_position'] = (self.areaScaling, 0.0, 0.0)
+                data.graph.nodes[c]['GV_position'] = (0.0, self.areaScaling, 0.0)
+                data.graph.nodes[d]['GV_position'] = (0.0, 0.0, self.areaScaling)
 
-            x = self.distances[f[0]][f[2]] * ((self.distances[f[0]][f[2]]**2 + self.distances[f[0]][f[1]]**2 - self.distances[f[1]][f[2]]**2) / (2 * self.distances[f[0]][f[2]] * self.distances[f[0]][f[1]]))
-            y = math.sqrt(self.distances[f[0]][f[2]]**2 - x**2)
-            data.graph.nodes[f[2]]['GV_position'] = (x, y, 0.0)
+                self.placedVertices.setdefault(a, {})
+                self.placedVertices.setdefault(b, {})
+                self.placedVertices.setdefault(c, {})
+                self.placedVertices.setdefault(d, {})
+                rand = True
+                exit()
 
-            #print(f"Distance AB = {Util.magnitude(glm.vec3(*data.graph.nodes[f[1]]['GV_position']) - glm.vec3(*data.graph.nodes[f[0]]['GV_position']))} Graph distance AB = {self.distances[f[0]][f[1]]} Scaled graph distance AB = {self.distances[f[0]][f[1]] * self.areaScaling}")
-            #print(f"Distance AC = {Util.magnitude(glm.vec3(*data.graph.nodes[f[2]]['GV_position']) - glm.vec3(*data.graph.nodes[f[0]]['GV_position']))} Graph distance AC = {self.distances[f[0]][f[2]]} Scaled graph distance AC = {self.distances[f[0]][f[2]] * self.areaScaling}")
-            #print(f"Distance BC = {Util.magnitude(glm.vec3(*data.graph.nodes[f[2]]['GV_position']) - glm.vec3(*data.graph.nodes[f[1]]['GV_position']))} Graph distance BC = {self.distances[f[1]][f[2]]} Scaled graph distance BC = {self.distances[f[1]][f[2]] * self.areaScaling}")
+            if ~rand:
+                aPos = glm.vec3(0.0, 0.0, 0.0)
+                bPos = glm.vec3(self.distances[a][b] * self.areaScaling, 0.0, 0.0)
 
-            barycenter = (glm.vec3(*data.graph.nodes[f[0]]['GV_position']) + glm.vec3(*data.graph.nodes[f[1]]['GV_position']) + glm.vec3(*data.graph.nodes[f[2]]['GV_position'])) / 3
-            delta = glm.vec3(0.0, 0.0, 0.0) - barycenter
+                ab = self.distances[a][b] * self.areaScaling
+                ac = self.distances[a][c] * self.areaScaling
+                bc = self.distances[b][c] * self.areaScaling
 
-            for v in f:
-                newPos = glm.vec3(*data.graph.nodes[v]['GV_position']) + delta
-                data.graph.nodes[v]['GV_position'] = (newPos.x, newPos.y, newPos.z)
-                self.placedVertices.setdefault(v, {})
+                cx = ac * ((ac**2 + ab**2 - bc**2)/(2 * ab * ac))
+                cy = math.sqrt(ac**2 - cx**2)
+                cPos = glm.vec3(cx, cy, 0.0)
+
+                delta = glm.vec3(0.0, 0.0, 0.0) - ((aPos + bPos + cPos)/3) # Centering the ABC triangle to try to ensure D won't be coplanar with them later
+
+                aPos += delta
+                bPos += delta
+                cPos += delta
+
+                ad = self.distances[a][d]
+                bd = self.distances[b][d]
+                cd = self.distances[c][d]
+                dPos = glm.vec3(0.0, 0.0, ((ad+bd+cd) * self.areaScaling)/3)
+                
+                temp = [(a, aPos), (b, bPos), (c, cPos), (d, dPos)]
+
+                print(f"Refining initial positions of the starting filtration...")
+                for i in range(20):
+                    for j in range(4):
+                        v = temp[j]
+                        disp = glm.vec3(0.0, 0.0, 0.0)
+                        for n in temp:
+                            if v[0] == n[0]: continue
+                            delta = n[1] - v[1]
+                            if Util.magnitude(delta) <= (self.distances[v[0]][n[0]] * self.areaScaling):
+                                delta = delta * (-1)
+                            nDisp = math.log(Util.magnitude(delta)/(self.distances[v[0]][n[0]] * self.areaScaling))
+                            disp = disp + (glm.normalize(delta) * nDisp)
+                        temp[j] = (v[0], v[1] + disp)
+                        print(temp)
+
+                aPos = temp[0][1]
+                bPos = temp[1][1]
+                cPos = temp[2][1]
+                dPos = temp[3][1]
+
+                data.graph.nodes[a]['GV_position'] = (aPos.x, aPos.y, aPos.z)
+                self.placedVertices.setdefault(a, {})
+                data.graph.nodes[b]['GV_position'] = (bPos.x, bPos.y, bPos.z)
+                self.placedVertices.setdefault(b, {})
+                data.graph.nodes[c]['GV_position'] = (cPos.x, cPos.y, cPos.z)
+                self.placedVertices.setdefault(c, {})
+                data.graph.nodes[d]['GV_position'] = (dPos.x, dPos.y, dPos.z)
+                self.placedVertices.setdefault(d, {})
 
         else:
             print(f"len(f) = {len(f)}")
-            for v in f:
-                # find initial position pos[v] of v
-                # Find closest 3 vertices among the ones already placed
-
+            for v in f: # Find initial position pos[v] of v
+                # Find closest 4 vertices among the ones already placed
                 d = [(u, self.distances[u][v]) for u in self.placedVertices]
                 d = sorted(d, key = lambda tup: tup[1])
-                d = d[:3]
+                d = d[:4]
 
-                newPos = (glm.vec3(*data.graph.nodes[d[0][0]]['GV_position']) + glm.vec3(*data.graph.nodes[d[1][0]]['GV_position']) + glm.vec3(*data.graph.nodes[d[2][0]]['GV_position'])) / 3
+                # Place v in the barycenter of those 4
+                newPos = glm.vec3(0.0, 0.0, 0.0)
+                for n in d:
+                    newPos += glm.vec3(*data.graph.nodes[n[0]]['GV_position'])
+                newPos = newPos / 4
+
                 data.graph.nodes[v]['GV_position'] = (newPos.x, newPos.y, newPos.z)
                 self.placedVertices.setdefault(v, {})
         return
     
     def runRound(self, data):
         i = self.iterationsLeft + 1 # Because we've already decreased self.iterationsLeft in runLoop before starting the rounds
+        #i = self.k
         f = self.filtrations[i]
+        #print(f"f = {f}")
 
         for v in f:
-            delta = self.calculateLocalForce(data, v, i)
+            if i > 0:
+                delta = self.calculateLocalForceKK(data, v, i)
+            else:
+                delta = self.calculateLocalForceFR(data, v, i)
+                #delta = self.calculateLocalForceKK(data, v, i)
 
             if 'heat' not in self.placedVertices[v]:
                 heat = self.areaScaling/6
@@ -248,7 +379,7 @@ class GajerDrawer(DrawerInterface):
             #print(f"{v} {newPos}")
         return
 
-    def calculateLocalForce(self, data, v, i):
+    def calculateLocalForceKK(self, data, v, i):
         force = glm.vec3(0.0, 0.0, 0.0)
         neighborhood = self.neighborhoods[v][i]['members']
         pos = glm.vec3(*data.graph.nodes[v]['GV_position'])
@@ -265,8 +396,91 @@ class GajerDrawer(DrawerInterface):
             force = force + nForce
         return force
 
+    def calculateLocalForceFR(self, data, v, i):
+        force = glm.vec3(0.0, 0.0, 0.0)
+        neighborhood = self.neighborhoods[v][i]['members']
+        pos = glm.vec3(*data.graph.nodes[v]['GV_position'])
+
+        """for n in data.graph.neighbors(v):
+            nPos = glm.vec3(*data.graph.nodes[n]['GV_position'])
+            euclideanDistance = Util.magnitude(nPos - pos)
+            nForce = ((euclideanDistance**2)/(self.areaScaling**2)) * (nPos - pos)
+            force = force + nForce
+
+        for n in neighborhood:
+            if n == v:
+                continue
+
+            if euclideanDistance == 0:
+                euclideanDistance = self.areaScaling / 1000
+            nForce = 0.5 * ((self.areaScaling**2)/(euclideanDistance**2)) * (pos - nPos)
+
+            force = force + nForce"""
+
+        """for n in neighborhood:
+            if n == v:
+                continue
+            nPos = glm.vec3(*data.graph.nodes[n]['GV_position'])
+            delta = (pos - nPos)
+            if (Util.magnitude(delta) == 0):
+                continue
+
+            nForce = glm.normalize(delta) * ((self.areaScaling**2) / Util.magnitude(delta))
+            force = force + nForce
+
+        for n in data.graph.neighbors(v):
+            nPos = glm.vec3(*data.graph.nodes[n]['GV_position'])
+            delta = (nPos - pos)
+            if (Util.magnitude(delta) == 0):
+                continue
+
+            nForce = glm.normalize(delta) * ((Util.magnitude(delta)**2) / ((self.distances[v][n] * self.areaScaling)**2))
+            if math.isnan(Util.magnitude(nForce)):
+                print(f"v = {v} n = {n}")
+                print(f"delta = {delta}")
+                print(f"glm.normalize(delta) = {glm.normalize(delta)}")
+                print(f"nForce = {nForce}")
+                print(f"Util.magnitude(nForce) = {Util.magnitude(nForce)}")
+                print(f"self.distances[{v}][{n}] = {self.distances[v][n]}")
+                print(f"(self.distances[v][n] * self.areaScaling) = {(self.distances[v][n] * self.areaScaling)}")
+                print(f"(self.distances[v][n] * self.areaScaling)**2 = {(self.distances[v][n] * self.areaScaling)**2}")
+                exit()
+            force = force + nForce"""
+
+        for n in data.graph.neighbors(v):
+            nPos = glm.vec3(*data.graph.nodes[n]['GV_position'])
+            delta = (nPos - pos)
+            if (Util.magnitude(delta) == 0): continue
+
+            if Util.magnitude(delta) <= (self.distances[v][n] * self.areaScaling):
+                delta = delta * (-1)
+            nForce = glm.normalize(delta) * math.log(Util.magnitude(delta)/(self.distances[v][n] * self.areaScaling))
+            force = force + nForce
+
+        for n in neighborhood:
+            nPos = glm.vec3(*data.graph.nodes[n]['GV_position'])
+            delta = (pos - nPos)
+            if (Util.magnitude(delta) == 0): continue
+
+            nForce = glm.normalize(delta) * (1 / (Util.magnitude(delta) ** 2))
+            force = force + nForce
+                    
+        return force
+
     def nbrs(self, i, degreeSum):
-        return (degreeSum / len(self.filtrations[i]))
+        return 3 * (degreeSum / len(self.filtrations[i]))
+
+    def centerGraph(self, data):
+        barycenter = glm.vec3(0.0, 0.0, 0.0)
+        for node in data.graph.nodes:
+            barycenter += glm.vec3(*data.graph.nodes[node]['GV_position'])
+        
+        n = data.graph.number_of_nodes()
+        barycenter = glm.vec3(0.0, 0.0, 0.0) - (barycenter/n)
+
+        for node in data.graph.nodes:
+            newPos = barycenter + glm.vec3(*data.graph.nodes[node]['GV_position'])
+            data.graph.nodes[node]['GV_position'] = (newPos.x, newPos.y, newPos.z)
 
 class MultiScaleDrawer(DrawerInterface):
     def __init__(self, origin):

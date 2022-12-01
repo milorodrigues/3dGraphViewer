@@ -94,9 +94,10 @@ class GraphViewer:
 
             self.drawGraph()
             
-            if self.parameters.iterationsLeft > 0:
+            """if self.parameters.iterationsLeft > 0:
                 self.graphDrawer.runLoop(self.data)
-                self.parameters.iterationsLeft -= 1
+                self.parameters.iterationsLeft -= 1"""
+            self.graphDrawer.runLoop(self.data)
             
             pygame.display.flip()
             pygame.time.wait(30)
