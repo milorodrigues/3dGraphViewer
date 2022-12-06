@@ -5,8 +5,8 @@ import json
 
 id = 0
 
-nodesPerCircle = 30
-circles = 50
+nodesPerCircle = 5
+circles = 10
 
 g = nx.Graph()
 
@@ -29,5 +29,5 @@ for circle in range(circles):
     previousCircle = list(currentCircle)
 
 data = json_graph.node_link_data(g)
-with open('cylinder1500.json', 'w') as f:
+with open('cylinder50.json', 'w') as f:
     json.dump(data, f)
