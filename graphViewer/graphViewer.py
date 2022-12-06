@@ -12,7 +12,7 @@ from .camera import Camera
 
 class GraphViewer:
     def __init__(self, graph, parameters):
-        self.displaySize = (1500, 1000)
+        self.displaySize = (1500, 900)
         self.displayFOV = 50.0
         self.displayNear = 0.1
         self.displayFar = 50.0
@@ -21,7 +21,7 @@ class GraphViewer:
         self.parameters = parameters
     
     def run(self):
-        self.graphDrawer = GD.GraphDrawer(model=self.parameters.model)
+        self.graphDrawer = GD.GraphDrawer(model=self.parameters.model, iterations=self.parameters.iterations)
         self.graphDrawer.initialize(self.data)
 
         GP.GraphPainter.random(self.data)

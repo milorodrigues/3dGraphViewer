@@ -33,6 +33,9 @@ with open(par.filepath) as f:
 G = json_graph.node_link_graph(data)
 
 gv = GV.GraphViewer(graph = G, parameters = par) 
+
+print(G.number_of_edges())
+print(G.number_of_nodes())
 gv.run()
 
 #filepath = 'data/microtest/microtest.json'
