@@ -879,7 +879,7 @@ class SpringDrawer(DrawerInterface):
 
 class BarycentricDrawer(DrawerInterface):
     def __init__(self, origin, iterations):
-        self.areaRadius = 3 # Maximum distance from origin
+        self.areaRadius = 20 # Maximum distance from origin
         self.origin = origin
         self.iterations = iterations
 
