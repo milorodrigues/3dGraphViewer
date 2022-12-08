@@ -5,8 +5,8 @@ import json
 
 id = 0
 
-nodesPerCircle = 10
-circles = 20
+nodesPerCircle = 20
+circles = 75
 
 g = nx.Graph()
 
@@ -43,5 +43,5 @@ for i in range(nodesPerCircle):
     #print(f"Attaching {firstCircle[i]} to {previousCircle[nodesPerCircle - 1 -i]}")
 
 data = json_graph.node_link_data(g)
-with open('torus200.json', 'w') as f:
+with open('torus1500.json', 'w') as f:
     json.dump(data, f)
