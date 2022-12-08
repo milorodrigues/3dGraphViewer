@@ -10,7 +10,7 @@ from OpenGL.GLUT import *
 
 class Camera:
     def __init__(self):
-        self.pos = glm.vec3(0.0, 0.0, -20)
+        self.pos = glm.vec3(0.0, 0.0, -300)
         self.target = glm.vec3(0.0, 0.0, 0.0)
 
         self.front = glm.normalize(self.target - self.pos)
@@ -33,7 +33,7 @@ class Camera:
         gluLookAt(*(self.pos), *(self.look), *(self.up))
 
     def moveForwardBack(self, zoomDir):
-        self.pos = self.pos + (self.front * self.speed * zoomDir)
+        self.pos = self.pos + (self.front * self.speed * zoomDir * 5)
         self.updateLook()
         self.updateRadius()
 

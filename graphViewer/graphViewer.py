@@ -16,7 +16,7 @@ class GraphViewer:
         self.displayFOV = 50.0
         self.displayNear = 0.1
         self.displayFar = 50.0
-        self.data = G.Graph(graph)
+        self.data = G.Graph(graph, initialize=False)
 
         self.parameters = parameters
     
@@ -24,7 +24,7 @@ class GraphViewer:
         self.graphDrawer = GD.GraphDrawer(model=self.parameters.model, iterations=self.parameters.iterations)
         self.graphDrawer.initialize(self.data)
 
-        GP.GraphPainter.random(self.data)
+        #GP.GraphPainter.random(self.data)
 
         pygame.init()
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
@@ -122,7 +122,7 @@ class GraphViewer:
         glTranslatef(*(node['GV_position']))
         q = gluNewQuadric()
         glColor3f(*(node['GV_color']))
-        gluSphere(q, 0.1, 20, 20)
+        gluSphere(q, 0.3, 20, 20)
         glPopMatrix()
 
     def drawEdge(self, edge):
@@ -131,6 +131,7 @@ class GraphViewer:
         
         glPushMatrix()
         glBegin(GL_LINES)
+        glColor3f(1.0, 1.0, 1.0)
         glVertex3f(*outPos)
         glVertex3f(*inPos)
         glEnd()
