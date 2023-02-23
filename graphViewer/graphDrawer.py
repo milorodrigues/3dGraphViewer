@@ -378,8 +378,8 @@ class GajerDrawer(DrawerInterface):
                 self.roundsLeft = self.getRounds()
                 self.iterationsLeft -= 1
             elif self.iterationsLeft == -1:
-                print(f"Centering graph...")
-                self.centerGraph(data)
+                #print(f"Centering graph...")
+                #self.centerGraph(data)
                 self.iterationsLeft -= 1
                 print(f"Drawing finished.")
         else:
@@ -567,7 +567,7 @@ class GajerDrawer(DrawerInterface):
         return force
 
     def nbrs(self, i, degreeSum):
-        return 3 * (degreeSum / len(self.filtrations[i]))
+        return 10 * (degreeSum / len(self.filtrations[i]))
 
     def centerGraph(self, data):
         barycenter = glm.vec3(0.0, 0.0, 0.0)

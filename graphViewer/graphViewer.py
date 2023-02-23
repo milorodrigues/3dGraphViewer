@@ -24,18 +24,17 @@ class GraphViewer:
         self.graphDrawer = GD.GraphDrawer(model=self.parameters.model, iterations=self.parameters.iterations)
         self.graphDrawer.initialize(self.data)
 
-        #GP.GraphPainter.random(self.data)
+        if self.data.initialize:
+            GP.GraphPainter.random(self.data)
 
         pygame.init()
         pygame.display.set_mode(self.displaySize, DOUBLEBUF | OPENGL)
+        pygame.display.set_caption('Graph Viewer - Hemophilia data (full graph)')
         glEnable(GL_DEPTH_TEST)
 
         self.cam = Camera()
 
-        """while self.parameters.iterationsLeft > 0:
-            print(f"{self.parameters.iterationsLeft} iterations left")
-            self.graphDrawer.runLoop(self.data)
-            self.parameters.iterationsLeft -= 1"""
+        #pygame.time.wait(1000)
         
         while True:
             curMousePos = pygame.mouse.get_pos()
@@ -68,18 +67,6 @@ class GraphViewer:
                 if event.type == pygame.MOUSEWHEEL:
                     if (event.y != 0):
                         self.cam.moveForwardBack(event.y)
-
-            
-            """keypress = pygame.key.get_pressed()
-            if keypress[pygame.K_w]:
-                cam.dragOrbital(1.0, 0.0)
-            if keypress[pygame.K_s]:
-                cam.dragOrbital(-1.0, 0.0)
-            if keypress[pygame.K_d]:
-                cam.dragOrbital(0.0, -1.0)
-            if keypress[pygame.K_a]:
-                cam.dragOrbital(0.0, 1.0)"""
-            
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -132,6 +119,7 @@ class GraphViewer:
         glPushMatrix()
         glBegin(GL_LINES)
         glColor3f(1.0, 1.0, 1.0)
+        #glColor3f(0.4, 0.5, 1.0)
         glVertex3f(*outPos)
         glVertex3f(*inPos)
         glEnd()

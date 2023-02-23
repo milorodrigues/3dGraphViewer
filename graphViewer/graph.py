@@ -3,6 +3,7 @@ import networkx as nx
 class Graph():
     def __init__(self, graph, initialize=True):
         self.graph = graph
+        self.initialize = initialize
             
         if initialize:
             self.initializeGVFields(self.graph)

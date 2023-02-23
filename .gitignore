@@ -1,6 +1,12 @@
 /env
 /src/__pycache__
+/__pycache__
+/data/hemophilia
+/graphViewer/__pycache__
 
 env.bat
 run.bat
+run2.bat
+test.py
+test2.py
 instructions.md
